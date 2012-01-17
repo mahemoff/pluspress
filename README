@@ -1,0 +1,6 @@
+A single PHP file for Google Plus profile to RSS, with cache support.
+
+Instructions:
+- Configure parameters at top of file
+- Upload file to your web host.
+- Done.
