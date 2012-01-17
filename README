@@ -1,6 +1,9 @@
 A single PHP file for Google Plus profile to RSS, with cache support.
 
 Instructions:
-- Configure parameters at top of file
-- Upload file to your web host.
-- Done.
+* git clone git@github.com:mahemoff/pluspress.git on your server
+* Include your API key at the top of the file
+* Point browser to your-domain/plusrss.php
+
+Working example:
+http://mahemoff.com/plusrss.php
