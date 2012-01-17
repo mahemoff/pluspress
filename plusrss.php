@@ -1,24 +1,25 @@
 <?
-/****************************************
- * SET YOUR KEY
- ****************************************/
-  // Get your key at https://code.google.com/apis/console
-  $key = getenv('PLUS_KEY');
-  // $key = 'insert-your-plus-key-here-or-in-shell-environment-as-above'
+///////////////////////////////
+// CONFIGURE YOUR PLUSRSS
+///////////////////////////////
 
-/****************************************
- * PARAMETERS
- ****************************************/
-  $uid = getenv('PLUS_ID'); // ID of Plus user - the long number in their profile URL
+  // Set API key. Get your key at https://code.google.com/apis/console.
+  $key = getenv('PLUS_KEY') ? getenv('PLUS_KEY') : 'insert-key-here';
+
+  // Set ID of Plus user. That's the long number in their profile URL.
+  $uid = getenv('PLUS_ID') ? getenv('PLUS_ID') : '106413090159067280619';
+
+  // Other parameters you can tweak if you like
   $size = 20; // number of RSS items
   $cachetime = 5 * 60;
-  $cachefolder = getenv('PLUS_CACHE'); // Cache folder
+  $cachefolder = getenv('PLUS_CACHE') ? getenv('PLUS_CACHE') : '/tmp';
   $cachefile = "$cachefolder/index-cached-".md5($_SERVER["REQUEST_URI"]).".html";
   date_default_timezone_set('GMT');
 
-/****************************************
- * SERVE FROM CACHE IF EXISTS
- ****************************************/
+///////////////////////////////
+// SERVE FROM CACHE IF EXISTS
+///////////////////////////////
+
   // http://simonwillison.net/2003/may/5/cachingwithphp/ modded
   if (file_exists($cachefile) && time() - $cachetime < filemtime($cachefile)) {
     print file_get_contents($cachefile);
@@ -26,34 +27,29 @@
   }
   ob_start();
 
-/****************************************
- * GO FETCH
- ****************************************/
+/////////////
+// GO FETCH
+/////////////
+
   $url = "https://www.googleapis.com/plus/v1/people/$uid/activities/public?key=$key&maxResults=$size";
   $activities = json_decode(get_remote($url));
   $items = $activities -> items;
 
-/****************************************
- * HELPERS TO PROCESS SOME OF THE DATA
- ****************************************/
+/////////////////////////////////////////
+// HELPERS TO PROCESS SOME OF THE DATA
+//////////////////////////////////////////
 
   function get_remote($url) {
-	// create a new cURL resource
-	$ch = curl_init();
 
-	// set URL and other appropriate options
-	curl_setopt($ch, CURLOPT_URL, $url);
-	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-	curl_setopt($ch, CURLOPT_HEADER, 0);
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HEADER, 0);
 
-	// grab URL and pass it to the browser
-	$contents = curl_exec($ch);
+    $contents = curl_exec($ch);
+    curl_close($ch);
+    return $contents;
 
-	// close cURL resource, and free up system resources
-	curl_close($ch);
-	
-	// Return contents
-	return $contents;
   }
 
   function pubDate($item) { return gmdate(DATE_RFC822, strtotime($item -> published)); }
@@ -83,9 +79,9 @@
 
   }
 
-/****************************************
- * PUMP OUT THE FEED
- ****************************************/
+//////////////////////
+// PUMP OUT THE FEED
+//////////////////////
 ?>
 <? echo '<?xml version="1.0" encoding="UTF-8"?>'."\n" ?>
 <rss xmlns:dc="http://purl.org/dc/elements/1.1/" version="2.0">
@@ -108,9 +104,9 @@
 <? } ?>
   </channel>
 </rss><?
-/****************************************
- * WRITE ALL THAT TO CACHE
- ****************************************/
+////////////////////////////
+// WRITE ALL THAT TO CACHE
+////////////////////////////
   $fp = fopen($cachefile, 'w');
   fwrite($fp, ob_get_contents());
   fclose($fp);
