@@ -9,11 +9,12 @@
 /****************************************
  * PARAMETERS
  ****************************************/
-  $uid = "106413090159067280619"; // ID of Plus user - the long number in their profile URL
+  $uid = getenv('PLUS_ID'); // ID of Plus user - the long number in their profile URL
   $size = 20; // number of RSS items
   $cachetime = 5 * 60;
-  $cachefile = "/tmp/index-cached-".md5($_SERVER["REQUEST_URI"]).".html";
-  date_default_timezone_set('gmt');
+  $cachefolder = getenv('PLUS_CACHE'); // Cache folder
+  $cachefile = "$cachefolder/index-cached-".md5($_SERVER["REQUEST_URI"]).".html";
+  date_default_timezone_set('GMT');
 
 /****************************************
  * SERVE FROM CACHE IF EXISTS
@@ -29,18 +30,38 @@
  * GO FETCH
  ****************************************/
   $url = "https://www.googleapis.com/plus/v1/people/$uid/activities/public?key=$key&maxResults=$size";
-  $activities = json_decode(file_get_contents($url));
+  $activities = json_decode(get_remote($url));
   $items = $activities -> items;
 
 /****************************************
  * HELPERS TO PROCESS SOME OF THE DATA
  ****************************************/
 
+  function get_remote($url) {
+	// create a new cURL resource
+	$ch = curl_init();
+
+	// set URL and other appropriate options
+	curl_setopt($ch, CURLOPT_URL, $url);
+	curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+	curl_setopt($ch, CURLOPT_HEADER, 0);
+
+	// grab URL and pass it to the browser
+	$contents = curl_exec($ch);
+
+	// close cURL resource, and free up system resources
+	curl_close($ch);
+	
+	// Return contents
+	return $contents;
+  }
+
   function pubDate($item) { return gmdate(DATE_RFC822, strtotime($item -> published)); }
 
   function content($item) {
 
     $object = $item -> object;
+    $content = '';
 
     if ($item->verb == 'share') {
       $source = "<a href={$object->actor->url}>{$object->actor->displayName}</a>";
